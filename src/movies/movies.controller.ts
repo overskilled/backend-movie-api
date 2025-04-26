@@ -1,42 +1,74 @@
-// movies/movies.controller.ts
-import { Controller, Get, Param, Query } from '@nestjs/common';
-import { MoviesService } from './movies.service';
+import { Controller, Get, Query, ParseIntPipe, Param } from '@nestjs/common';
+import { PaginationDto, PaginatedResponse } from '../common/dto/pagination.dto';
+import { ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { Movie } from './schemas/movies.schema';
+import { MoviesService } from './movies.service';
 
 @Controller('movies')
 export class MoviesController {
     constructor(private readonly moviesService: MoviesService) { }
 
     @Get()
-    async findAll(): Promise<Movie[]> {
-        return this.moviesService.findAll();
+    @ApiQuery({ name: 'page', type: Number, example: 1 })
+    @ApiQuery({ name: 'limit', type: Number, example: 10 })
+    @ApiResponse({ type: PaginatedResponse })
+    async findAll(
+        @Query('page', ParseIntPipe) page: number = 1,
+        @Query('limit', ParseIntPipe) limit: number = 10
+    ): Promise<PaginatedResponse<Movie>> {
+        return this.moviesService.findAll({ page, limit });
+    }
+
+    @Get('filter')
+    async filterByField(
+        @Query('column') column: string,
+        @Query('value') value: string,
+        @Query('page', ParseIntPipe) page: number = 1,
+        @Query('limit', ParseIntPipe) limit: number = 10
+    ): Promise<PaginatedResponse<Movie>> {
+        // Handle array values (comma-separated)
+        const isArrayQuery = value.includes(',');
+        const parsedValue = isArrayQuery
+            ? value.split(',')
+            : !isNaN(Number(value))
+                ? Number(value)
+                : value;
+
+        const query = isArrayQuery
+            ? { [column]: { $all: parsedValue } }  // Array exact match
+            : typeof parsedValue === 'number'
+                ? { [column]: parsedValue }          // Numeric exact match
+                : typeof parsedValue === 'string'
+                    ? { [column]: { $regex: new RegExp(parsedValue, 'i') } } // Text search
+                    : {}; // Fallback for invalid types
+
+        return this.moviesService.filterByField(query, { page, limit });
     }
 
     @Get('search')
-    async search(@Query('title') title: string): Promise<Movie[]> {
-        return this.moviesService.searchByTitle(title);
+    @ApiQuery({ name: 'title', example: 'matrix' })
+    async searchByTitle(
+        @Query('title') title: string,
+        @Query('page', ParseIntPipe) page: number,
+        @Query('limit', ParseIntPipe) limit: number
+    ): Promise<PaginatedResponse<Movie>> {
+        return this.moviesService.searchByTitle(title, { page, limit });
     }
 
     @Get('year/:year')
-    async findByYear(@Param('year') year: number): Promise<Movie[]> {
-        return this.moviesService.getMoviesByYear(year);
+    async getMoviesByYear(
+        @Param('year', ParseIntPipe) year: number,
+        @Query('page', ParseIntPipe) page: number,
+        @Query('limit', ParseIntPipe) limit: number
+    ): Promise<PaginatedResponse<Movie>> {
+        return this.moviesService.getMoviesByYear(year, { page, limit });
     }
 
     @Get('top-rated')
-    async getTopRated(@Query('limit') limit = 10): Promise<Movie[]> {
-        return this.moviesService.getTopRated(limit);
+    async getTopRated(
+        @Query('page', ParseIntPipe) page: number,
+        @Query('limit', ParseIntPipe) limit: number
+    ): Promise<PaginatedResponse<Movie>> {
+        return this.moviesService.getTopRated({ page, limit });
     }
-
-    @Get('paginated')
-    async findAllPaginated(
-        @Query('page') page = 1,
-        @Query('limit') limit = 10,
-    ) {
-        return this.moviesService.findAllPaginated(page, limit);
-    }
-
-    // @Get(':id')
-    // async findOne(@Param('id') id: string): Promise<Movie> {
-    //     return this.moviesService.findById(id);
-    // }
 }
