@@ -1,7 +1,7 @@
 import { Controller, Get, Query, ParseIntPipe, Param } from '@nestjs/common';
 import { PaginationDto, PaginatedResponse } from '../common/dto/pagination.dto';
 import { ApiQuery, ApiResponse } from '@nestjs/swagger';
-import { Movie } from './schemas/movies.schema';
+import { Movie } from '../schemas/movies.schema';
 import { MoviesService } from './movies.service';
 
 @Controller('movies')

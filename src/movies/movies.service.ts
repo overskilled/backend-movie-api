@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Movie } from './schemas/movies.schema';
+import { Movie } from '../schemas/movies.schema';
 import { PaginationDto, PaginatedResponse } from '../common/dto/pagination.dto';
 
 @Injectable()
@@ -24,6 +24,7 @@ export class MoviesService {
 
         return new PaginatedResponse(data, total, { page, limit });
     }
+    
 
     async findAll(pagination: PaginationDto): Promise<PaginatedResponse<Movie>> {
         return this.paginatedQuery({}, pagination);

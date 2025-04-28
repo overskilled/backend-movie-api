@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { Movie, MovieSchema } from './schemas/movies.schema';
+import { Movie, MovieSchema } from '../schemas/movies.schema';
 import { MoviesService } from './movies.service';
 import { MoviesController } from './movies.controller';
 
